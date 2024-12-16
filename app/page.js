@@ -1,101 +1,169 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useEffect } from 'react'
+import PricingTable from '../components/PricingTable'
+import Filters from '../components/Filters'
+import ExportButton from '../components/ExportButton'
+import SearchBar from '../components/SearchBar.js'
+
+const dummyData = [
+  {
+    id: 1,
+    Name: 'Basic A0',
+    'API Name': 'Basic_A0',
+    'Instance Memory': '0.75 GB',
+    vCPUs: 1,
+    'Instance Storage': '20 GB',
+    'Linux On Demand cost': '$0.018',
+    'Linux Savings Plan': '$0.015',
+    'Linux Reserved cost': '$0.013',
+    'Linux Spot cost': '$0.0054',
+    'Windows On Demand cost': '$0.02',
+    'Windows Savings Plan': '$0.017',
+    'Windows Reserved cost': '$0.015',
+    'Windows Spot cost': '$0.006'
+  },
+  {
+    id: 2,
+    Name: 'Standard B1s',
+    'API Name': 'Standard_B1s',
+    'Instance Memory': '1 GB',
+    vCPUs: 1,
+    'Instance Storage': '4 GB',
+    'Linux On Demand cost': '$0.0124',
+    'Linux Savings Plan': '$0.0105',
+    'Linux Reserved cost': '$0.0093',
+    'Linux Spot cost': '$0.0037',
+    'Windows On Demand cost': '$0.0214',
+    'Windows Savings Plan': '$0.0182',
+    'Windows Reserved cost': '$0.0161',
+    'Windows Spot cost': '$0.0064'
+  },
+  {
+    id: 3,
+    Name: 'Standard D2s v3',
+    'API Name': 'Standard_D2s_v3',
+    'Instance Memory': '8 GB',
+    vCPUs: 2,
+    'Instance Storage': '16 GB',
+    'Linux On Demand cost': '$0.096',
+    'Linux Savings Plan': '$0.0816',
+    'Linux Reserved cost': '$0.0720',
+    'Linux Spot cost': '$0.0288',
+    'Windows On Demand cost': '$0.192',
+    'Windows Savings Plan': '$0.1632',
+    'Windows Reserved cost': '$0.1440',
+    'Windows Spot cost': '$0.0576'
+  },
+  // Add more dummy data here if needed
+]
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [data, setData] = useState(dummyData)
+  const [filteredData, setFilteredData] = useState(dummyData)
+  const [selectedColumns, setSelectedColumns] = useState([
+    'Name', 'API Name', 'Instance Memory', 'vCPUs', 'Instance Storage',
+    'Linux On Demand cost', 'Linux Savings Plan', 'Linux Reserved cost', 'Linux Spot cost',
+    'Windows On Demand cost', 'Windows Savings Plan', 'Windows Reserved cost', 'Windows Spot cost'
+  ])
+  const [filters, setFilters] = useState({
+    region: '',
+    availableRegions: [
+      'US East (N. Virginia)',
+      'US West (Oregon)',
+      'EU (Frankfurt)',
+      'Asia Pacific (Tokyo)',
+      'South America (São Paulo)',
+      'Canada (Central)',
+      'Australia (Sydney)',
+      'India (Mumbai)',
+    ],
+    pricingUnit: '',
+    cost: '',
+    committedUseDiscounts: ''
+  })
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters)
+    applyFilters(newFilters)
+  }
+
+  const handleColumnChange = (columns) => {
+    setSelectedColumns(columns)
+  }
+
+  const handleSearch = (term) => {
+    setSearchTerm(term)
+    applyFilters(filters, term)
+  }
+
+  const applyFilters = (newFilters, term = searchTerm) => {
+    let filtered = data
+
+    if (newFilters.region) {
+      filtered = filtered.filter(item => item.Name.includes(newFilters.region))
+    }
+
+    if (newFilters.pricingUnit) {
+      filtered = filtered.filter(item => item['Instance Memory'].includes(newFilters.pricingUnit))
+    }
+
+    if (newFilters.cost) {
+      filtered = filtered.filter(item => item['Linux On Demand cost'].includes(newFilters.cost))
+    }
+
+    if (newFilters.committedUseDiscounts) {
+      filtered = filtered.filter(item => item['Linux Savings Plan'].includes(newFilters.committedUseDiscounts))
+    }
+
+    if (term) {
+      filtered = filtered.filter(item =>
+        Object.values(item).some(val =>
+          val.toString().toLowerCase().includes(term.toLowerCase())
+        )
+      )
+    }
+
+    setFilteredData(filtered)
+  }
+
+  const clearFilters = () => {
+    setFilters({
+      region: '',
+      pricingUnit: '',
+      cost: '',
+      committedUseDiscounts: ''
+    })
+    setSearchTerm('')
+    setFilteredData(data)
+  }
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-4">Azure Cloud Pricing</h1>
+      <div className="mb-4">
+        <Filters
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          columns={selectedColumns}
+          onColumnChange={handleColumnChange}
+        />
+        <SearchBar onSearch={handleSearch} />
+        <ExportButton data={filteredData} />
+        <button
+          className="bg-red-500 text-white px-4 py-2 rounded mr-2"
+          onClick={clearFilters}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Clear Filters
+        </button>
+      </div>
+      <PricingTable
+        data={filteredData}
+        columns={selectedColumns}
+      />
     </div>
-  );
+  )
 }
+
