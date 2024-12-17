@@ -1,7 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 
-export default function Filters({ filters, onFilterChange, columns, onColumnChange }) {
+export default function Filters({ filters, onFilterChange, columns, onColumnChange, data }) {
   const [showColumnSelector, setShowColumnSelector] = useState(false)
+  const [filterOptions, setFilterOptions] = useState({
+    location: [],
+    serviceFamily: [],
+    type: [],
+    unitOfMeasure: []
+  })
+
+  useEffect(() => {
+    if (data.length > 0) {
+      const options = {
+        location: [...new Set(data.map(item => item.location))],
+        serviceFamily: [...new Set(data.map(item => item.serviceFamily))],
+        type: [...new Set(data.map(item => item.type))],
+        unitOfMeasure: [...new Set(data.map(item => item.unitOfMeasure))]
+      }
+      setFilterOptions(options)
+    }
+  }, [data])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -13,79 +32,77 @@ export default function Filters({ filters, onFilterChange, columns, onColumnChan
   }
 
   return (
-    <div className="flex flex-wrap gap-4 mb-4">
-      <select
-        name="region"
-        value={filters.region}
-        onChange={handleChange}
-        className="border p-2 rounded"
-      >
-        <option value="">Select Region</option>
-        {filters.availableRegions.map(region => (
-          <option key={region} value={region}>{region}</option>
-        ))}
-      </select>
-      <select
-        name="pricingUnit"
-        value={filters.pricingUnit}
-        onChange={handleChange}
-        className="border p-2 rounded"
-      >
-        <option value="">Select Pricing Unit</option>
-        <option value="Instance">Instance</option>
-        <option value="vCPU">vCPU</option>
-        <option value="ACU">ACU</option>
-        <option value="Memory">Memory</option>
-      </select>
-      <select
-        name="cost"
-        value={filters.cost}
-        onChange={handleChange}
-        className="border p-2 rounded"
-      >
-        <option value="">Select Cost</option>
-        <option value="Per Second">Per Second</option>
-        <option value="Per Minute">Per Minute</option>
-        <option value="Hourly">Hourly</option>
-        <option value="Daily">Daily</option>
-        <option value="Weekly">Weekly</option>
-        <option value="Monthly">Monthly</option>
-        <option value="Annually">Annually</option>
-      </select>
-      <select
-        name="committedUseDiscounts"
-        value={filters.committedUseDiscounts}
-        onChange={handleChange}
-        className="border p-2 rounded"
-      >
-        <option value="">Select Committed Use Discounts</option>
-        <option value="1-Year reservation">1-Year reservation</option>
-        <option value="3-Year reservation">3-Year reservation</option>
-        <option value="1-Year savings plan">1-Year savings plan</option>
-        <option value="3-Year savings plan">3-Year savings plan</option>
-        <option value="1-Year subscription">1-Year subscription</option>
-        <option value="3-Year subscription">3-Year subscription</option>
-        <option value="1-Year savings plan (Hybrid benefit)">1-Year savings plan (Hybrid benefit)</option>
-        <option value="3-Year savings plan (Hybrid benefit)">3-Year savings plan (Hybrid benefit)</option>
-      </select>
-      <button
-        onClick={toggleColumnSelector}
-        className="bg-blue-500 text-white px-4 py-2 rounded"
-      >
-        Select Columns
-      </button>
-      {showColumnSelector && (
-        <ColumnSelector columns={columns} onColumnChange={onColumnChange} />
-      )}
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <select
+          name="location"
+          value={filters.location}
+          onChange={handleChange}
+          className="w-full px-3 py-2 text-gray-700 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+        >
+          <option value="">Select Location</option>
+          {filterOptions.location.map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+        <select
+          name="serviceFamily"
+          value={filters.serviceFamily}
+          onChange={handleChange}
+          className="w-full px-3 py-2 text-gray-700 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+        >
+          <option value="">Select Service Family</option>
+          {filterOptions.serviceFamily.map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+        <select
+          name="type"
+          value={filters.type}
+          onChange={handleChange}
+          className="w-full px-3 py-2 text-gray-700 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+        >
+          <option value="">Select Type</option>
+          {filterOptions.type.map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+        <select
+          name="unitOfMeasure"
+          value={filters.unitOfMeasure}
+          onChange={handleChange}
+          className="w-full px-3 py-2 text-gray-700 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+        >
+          <option value="">Select Unit of Measure</option>
+          {filterOptions.unitOfMeasure.map(option => (
+            <option key={option} value={option}>{option}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <button
+          onClick={toggleColumnSelector}
+          className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-left text-gray-700 bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+        >
+          <span>Select Columns</span>
+          {showColumnSelector ? (
+            <ChevronUp className="w-5 h-5" />
+          ) : (
+            <ChevronDown className="w-5 h-5" />
+          )}
+        </button>
+        {showColumnSelector && (
+          <ColumnSelector columns={columns} onColumnChange={onColumnChange} />
+        )}
+      </div>
     </div>
   )
 }
 
 function ColumnSelector({ columns, onColumnChange }) {
   const allColumns = [
-    'Name', 'API Name', 'Instance Memory', 'vCPUs', 'Instance Storage',
-    'Linux On Demand cost', 'Linux Savings Plan', 'Linux Reserved cost', 'Linux Spot cost',
-    'Windows On Demand cost', 'Windows Savings Plan', 'Windows Reserved cost', 'Windows Spot cost'
+    'productName', 'skuName', 'serviceName', 'armRegionName', 'location',
+    'retailPrice', 'unitPrice', 'unitOfMeasure', 'type', 'armSkuName'
   ]
 
   const handleColumnToggle = (column) => {
@@ -97,15 +114,17 @@ function ColumnSelector({ columns, onColumnChange }) {
   }
 
   return (
-    <div className="absolute z-10 bg-white border p-4 rounded shadow-lg">
-      <h3 className="font-bold mb-2">Select Columns:</h3>
+    <div className="mt-2 p-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg">
+      <h3 className="font-bold mb-2 text-gray-700 dark:text-gray-200">Select Columns:</h3>
       <div className="grid grid-cols-2 gap-2">
         {allColumns.map(column => (
           <button
             key={column}
             onClick={() => handleColumnToggle(column)}
-            className={`px-2 py-1 rounded ${
-              columns.includes(column) ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-300 ${
+              columns.includes(column)
+                ? 'bg-blue-500 text-white hover:bg-blue-600'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
             }`}
           >
             {column}
@@ -114,25 +133,5 @@ function ColumnSelector({ columns, onColumnChange }) {
       </div>
     </div>
   )
-}
-
-const dummyData = {
-  filters: {
-    region: '',
-    availableRegions: [
-      'US East (N. Virginia)',
-      'US West (Oregon)',
-      'EU (Frankfurt)',
-      'Asia Pacific (Tokyo)',
-      'South America (São Paulo)',
-      'Canada (Central)',
-      'Australia (Sydney)',
-      'India (Mumbai)',
-    ],
-    pricingUnit: '',
-    cost: '',
-    committedUseDiscounts: '',
-  },
-  // ... other filter properties ...
 }
 

@@ -1,4 +1,5 @@
 import * as XLSX from 'xlsx'
+import { Download } from 'lucide-react'
 
 export default function ExportButton({ data }) {
   const exportToExcel = () => {
@@ -11,8 +12,9 @@ export default function ExportButton({ data }) {
   return (
     <button
       onClick={exportToExcel}
-      className="bg-green-500 text-white px-4 py-2 rounded mr-2"
+      className="flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors duration-300 ease-in-out"
     >
+      <Download className="w-5 h-5 mr-2" />
       Export to Excel
     </button>
   )

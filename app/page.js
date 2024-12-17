@@ -4,86 +4,102 @@ import { useState, useEffect } from 'react'
 import PricingTable from '../components/PricingTable'
 import Filters from '../components/Filters'
 import ExportButton from '../components/ExportButton'
-import SearchBar from '../components/SearchBar.js'
+import SearchBar from '../components/SearchBar'
+import Navbar from '../components/Navbar'
+import Footer from '@/components/Footer'
 
+const columns = [
+  'productName',
+  'skuName',
+  'serviceName',
+  'armRegionName',
+  'retailPrice',
+  'armSkuName',
+  'type'
+]
+
+// Dummy data to use as fallback
 const dummyData = [
   {
-    id: 1,
-    Name: 'Basic A0',
-    'API Name': 'Basic_A0',
-    'Instance Memory': '0.75 GB',
-    vCPUs: 1,
-    'Instance Storage': '20 GB',
-    'Linux On Demand cost': '$0.018',
-    'Linux Savings Plan': '$0.015',
-    'Linux Reserved cost': '$0.013',
-    'Linux Spot cost': '$0.0054',
-    'Windows On Demand cost': '$0.02',
-    'Windows Savings Plan': '$0.017',
-    'Windows Reserved cost': '$0.015',
-    'Windows Spot cost': '$0.006'
+    id: '1',
+    productName: "Virtual Machines D Series Windows",
+    skuName: "D14 Spot",
+    serviceName: "Virtual Machines",
+    armRegionName: "southindia",
+    retailPrice: 0.37674,
+    unitOfMeasure: "1 Hour",
+    armSkuName: "Standard_D14",
+    type: "Consumption"
   },
   {
-    id: 2,
-    Name: 'Standard B1s',
-    'API Name': 'Standard_B1s',
-    'Instance Memory': '1 GB',
-    vCPUs: 1,
-    'Instance Storage': '4 GB',
-    'Linux On Demand cost': '$0.0124',
-    'Linux Savings Plan': '$0.0105',
-    'Linux Reserved cost': '$0.0093',
-    'Linux Spot cost': '$0.0037',
-    'Windows On Demand cost': '$0.0214',
-    'Windows Savings Plan': '$0.0182',
-    'Windows Reserved cost': '$0.0161',
-    'Windows Spot cost': '$0.0064'
+    id: '2',
+    productName: "Azure Database for MySQL Single Server General Purpose - Compute Gen5",
+    skuName: "vCore",
+    serviceName: "Azure Database for MySQL",
+    armRegionName: "uksouth",
+    retailPrice: 0.1016,
+    unitOfMeasure: "1 Hour",
+    armSkuName: "AzureDB_MySQL_General_Purpose_Compute_Gen5",
+    type: "Consumption"
   },
   {
-    id: 3,
-    Name: 'Standard D2s v3',
-    'API Name': 'Standard_D2s_v3',
-    'Instance Memory': '8 GB',
-    vCPUs: 2,
-    'Instance Storage': '16 GB',
-    'Linux On Demand cost': '$0.096',
-    'Linux Savings Plan': '$0.0816',
-    'Linux Reserved cost': '$0.0720',
-    'Linux Spot cost': '$0.0288',
-    'Windows On Demand cost': '$0.192',
-    'Windows Savings Plan': '$0.1632',
-    'Windows Reserved cost': '$0.1440',
-    'Windows Spot cost': '$0.0576'
-  },
-  // Add more dummy data here if needed
+    id: '3',
+    productName: "Blob Storage",
+    skuName: "Archive GRS",
+    serviceName: "Storage",
+    armRegionName: "westus2",
+    retailPrice: 0.0,
+    unitOfMeasure: "1 GB",
+    armSkuName: "",
+    type: "Consumption"
+  }
 ]
 
 export default function Home() {
-  const [data, setData] = useState(dummyData)
-  const [filteredData, setFilteredData] = useState(dummyData)
-  const [selectedColumns, setSelectedColumns] = useState([
-    'Name', 'API Name', 'Instance Memory', 'vCPUs', 'Instance Storage',
-    'Linux On Demand cost', 'Linux Savings Plan', 'Linux Reserved cost', 'Linux Spot cost',
-    'Windows On Demand cost', 'Windows Savings Plan', 'Windows Reserved cost', 'Windows Spot cost'
-  ])
+  const [data, setData] = useState([])
+  const [filteredData, setFilteredData] = useState([])
+  const [selectedColumns, setSelectedColumns] = useState(columns)
   const [filters, setFilters] = useState({
-    region: '',
-    availableRegions: [
-      'US East (N. Virginia)',
-      'US West (Oregon)',
-      'EU (Frankfurt)',
-      'Asia Pacific (Tokyo)',
-      'South America (São Paulo)',
-      'Canada (Central)',
-      'Australia (Sydney)',
-      'India (Mumbai)',
-    ],
-    pricingUnit: '',
-    cost: '',
-    committedUseDiscounts: ''
+    location: '',
+    serviceFamily: '',
+    type: '',
+    unitOfMeasure: ''
   })
-
   const [searchTerm, setSearchTerm] = useState('')
+  const [darkMode, setDarkMode] = useState(false)
+  const [error, setError] = useState(null)
+  const [selectedRows, setSelectedRows] = useState([])
+  const [compareMode, setCompareMode] = useState(false)
+
+  useEffect(() => {
+    fetchData()
+    const isDarkMode = localStorage.getItem('darkMode') === 'true' ||
+      (!('darkMode' in localStorage) &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches)
+    setDarkMode(isDarkMode)
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch('/api/pricing')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const result = await response.json()
+      if (result.Items && Array.isArray(result.Items)) {
+        const dataWithIds = result.Items.map((item, index) => ({ ...item, id: `${index}` }))
+        setData(dataWithIds)
+        setFilteredData(dataWithIds)
+      } else {
+        throw new Error('Invalid data structure received from API')
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setError('Failed to fetch pricing data. Using dummy data instead.')
+      setData(dummyData)
+      setFilteredData(dummyData)
+    }
+  }
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters)
@@ -102,20 +118,20 @@ export default function Home() {
   const applyFilters = (newFilters, term = searchTerm) => {
     let filtered = data
 
-    if (newFilters.region) {
-      filtered = filtered.filter(item => item.Name.includes(newFilters.region))
+    if (newFilters.location) {
+      filtered = filtered.filter(item => item.location === newFilters.location)
     }
 
-    if (newFilters.pricingUnit) {
-      filtered = filtered.filter(item => item['Instance Memory'].includes(newFilters.pricingUnit))
+    if (newFilters.serviceFamily) {
+      filtered = filtered.filter(item => item.serviceFamily === newFilters.serviceFamily)
     }
 
-    if (newFilters.cost) {
-      filtered = filtered.filter(item => item['Linux On Demand cost'].includes(newFilters.cost))
+    if (newFilters.type) {
+      filtered = filtered.filter(item => item.type === newFilters.type)
     }
 
-    if (newFilters.committedUseDiscounts) {
-      filtered = filtered.filter(item => item['Linux Savings Plan'].includes(newFilters.committedUseDiscounts))
+    if (newFilters.unitOfMeasure) {
+      filtered = filtered.filter(item => item.unitOfMeasure === newFilters.unitOfMeasure)
     }
 
     if (term) {
@@ -131,38 +147,108 @@ export default function Home() {
 
   const clearFilters = () => {
     setFilters({
-      region: '',
-      pricingUnit: '',
-      cost: '',
-      committedUseDiscounts: ''
+      location: '',
+      serviceFamily: '',
+      type: '',
+      unitOfMeasure: ''
     })
     setSearchTerm('')
     setFilteredData(data)
   }
 
+  const handleDarkModeToggle = (isDarkMode) => {
+    setDarkMode(isDarkMode)
+  }
+
+  const handleRowSelect = (id) => {
+    setSelectedRows(prev => 
+      prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
+    )
+  }
+
+  const handleCompare = () => {
+    setCompareMode(true)
+  }
+
+  const handleClearCompare = () => {
+    setCompareMode(false)
+    setSelectedRows([])
+  }
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Azure Cloud Pricing</h1>
-      <div className="mb-4">
-        <Filters
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          columns={selectedColumns}
-          onColumnChange={handleColumnChange}
-        />
-        <SearchBar onSearch={handleSearch} />
-        <ExportButton data={filteredData} />
-        <button
-          className="bg-red-500 text-white px-4 py-2 rounded mr-2"
-          onClick={clearFilters}
-        >
-          Clear Filters
-        </button>
-      </div>
-      <PricingTable
-        data={filteredData}
-        columns={selectedColumns}
-      />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Navbar darkMode={darkMode} onDarkModeToggle={handleDarkModeToggle} />
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+            <p className="font-bold">Warning</p>
+            <p>{error}</p>
+          </div>
+        )}
+        <div className="space-y-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-6 transition-all duration-300 ease-in-out">
+            <Filters
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              columns={selectedColumns}
+              onColumnChange={handleColumnChange}
+              data={data}
+            />
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <div className="w-full sm:w-2/3">
+                <SearchBar onSearch={handleSearch} />
+              </div>
+              <div className="flex gap-2 w-full sm:w-1/3 justify-end">
+                <ExportButton data={filteredData} />
+                <button
+                  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors duration-300 ease-in-out"
+                  onClick={clearFilters}
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition-all duration-300 ease-in-out">
+            <div className="p-4 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+                {compareMode ? 'Comparing Selected Items' : 'Azure Pricing Data'}
+              </h2>
+              <div className="space-x-2">
+                {!compareMode && (
+                  <button
+                    onClick={handleCompare}
+                    disabled={selectedRows.length < 2}
+                    className={`px-4 py-2 rounded-md transition-colors duration-300 ease-in-out ${
+                      selectedRows.length < 2
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    }`}
+                  >
+                    Compare Selected ({selectedRows.length})
+                  </button>
+                )}
+                {compareMode && (
+                  <button
+                    onClick={handleClearCompare}
+                    className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md transition-colors duration-300 ease-in-out"
+                  >
+                    Clear Comparison
+                  </button>
+                )}
+              </div>
+            </div>
+            <PricingTable
+              data={filteredData}
+              columns={selectedColumns}
+              selectedRows={selectedRows}
+              onRowSelect={handleRowSelect}
+              compareMode={compareMode}
+            />
+          </div>
+        </div>
+      </main>
+      <Footer/>
     </div>
   )
 }
